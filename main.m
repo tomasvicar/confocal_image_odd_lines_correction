@@ -6,7 +6,7 @@ addpath('czireader')
 
 input_folder = '../data';
 output_folder = '../result';
-sift_range = -5:0.25:5;  %% shift search values
+shift_range = -5:0.25:5;  %% shift search values
 save_all_shifts = 0; %% 1 to save all shifts - very slow - but allow manual selection of otput shifts....
 
 
@@ -23,8 +23,8 @@ mkdir([output_folder ])
 
 
 
-quality = zeros(length(file_names),length(sift_range));
-names = cell(length(file_names),length(sift_range));
+quality = zeros(length(file_names),length(shift_range));
+names = cell(length(file_names),length(shift_range));
 
 
 for file_num = 1:length(file_names)
@@ -33,8 +33,7 @@ for file_num = 1:length(file_names)
     A = ReadImage6D([input_folder '/' file_names{file_num}] );
 
     A = A{1};
-    A = squeeze(A);
-    A = permute(A,[3 4 1 2]);%%reorder to  x,y,z,c
+    A = permute(A,[5 6 3 4 1 2]);%%reorder to  x,y,z,c
     
     
     
@@ -42,28 +41,53 @@ for file_num = 1:length(file_names)
     
     
     
-    sift_ind = 0;
-    for sift = sift_range
-        sift_ind = sift_ind +1;
-    
+    for shift_ind = 1:length(shift_range)
+        shift = shift_range(shift_ind);
+        
         A = A0;
 
         for row = 1:2:size(A,1)
-
-            tmp = A(row,:,:,:);
-            tmp = fraccircshift(tmp,[0 sift 0 0]);
-            A(row,:,:,:) = tmp;
+            
+            if length(size(A))==2
+                tmp = A(row,:);
+            elseif length(size(A))==3
+                tmp = A(row,:,:);
+            elseif length(size(A))==4
+                tmp = A(row,:,:,:);
+            elseif length(size(A))==5
+                tmp = A(row,:,:,:,:);
+            else
+                error('dims error')
+            end
+            
+            tmp_shift = zeros(1,length(size(A)));
+            tmp_shift(2) = shift;
+            tmp = fraccircshift(tmp,tmp_shift);
+            
+            if length(size(A))==2
+                A(row,:) = tmp;
+            elseif length(size(A))==3
+                A(row,:,:) = tmp;
+            elseif length(size(A))==4
+                A(row,:,:,:) = tmp;
+            elseif length(size(A))==5
+                A(row,:,:,:,:) = tmp;
+            else
+                error('dims error')
+            end
 
         end
 
         dif = abs(diff(A,1,1));
-        quality(file_num,sift_ind) = -sum(dif(:));
+        quality(file_num,shift_ind) = -sum(dif(:));
         
-        name = [output_folder '/' file_names{file_num}(1:end-4) '/' file_names{file_num}(1:end-4) '_sift' num2str(sift) '.tiff' ];
+        name = [output_folder '/' file_names{file_num}(1:end-4) '/' file_names{file_num}(1:end-4) '_shift' num2str(shift) '.tiff' ];
         
-        names{file_num,sift_ind} = name;
+        names{file_num,shift_ind} = name;
         if save_all_shifts
-            bfsave(A, name, 'dimensionOrder', 'XYTZC', 'Compression', 'LZW')
+            
+            A = permute(A,[1 2 4 3 5 6]);
+            bfsave(A, name, 'dimensionOrder', 'XYCZT', 'Compression', 'LZW')
         end
 %         B = bfopen_fix(name);
         
@@ -74,20 +98,45 @@ for file_num = 1:length(file_names)
     
     [~,ind] = max(quality(file_num,:));
     
-    sift = sift_range(ind);
+    shift = shift_range(ind);
     
      A = A0;
 
     for row = 1:2:size(A,1)
+            
+        if length(size(A))==2
+            tmp = A(row,:);
+        elseif length(size(A))==3
+            tmp = A(row,:,:);
+        elseif length(size(A))==4
+            tmp = A(row,:,:,:);
+        elseif length(size(A))==5
+            tmp = A(row,:,:,:,:);
+        else
+            error('dims error')
+        end
 
-        tmp = A(row,:,:,:);
-        tmp = fraccircshift(tmp,[0 sift 0 0]);
-        A(row,:,:,:) = tmp;
+        tmp_shift = zeros(1,length(size(A)));
+        tmp_shift(2) = shift;
+        tmp = fraccircshift(tmp,tmp_shift);
+        
+        if length(size(A))==2
+                A(row,:) = tmp;
+            elseif length(size(A))==3
+                A(row,:,:) = tmp;
+            elseif length(size(A))==4
+                A(row,:,:,:) = tmp;
+            elseif length(size(A))==5
+                A(row,:,:,:,:) = tmp;
+            else
+                error('dims error')
+            end
 
     end
     
-    name = [output_folder '/'  file_names{file_num}(1:end-4) '_sift' num2str(sift) '.tiff' ];
-    bfsave(A, name, 'dimensionOrder', 'XYTZC', 'Compression', 'LZW')
+    name = [output_folder '/'  file_names{file_num}(1:end-4) '_shift' num2str(shift) '.tiff' ];
+    A = permute(A,[1 2 4 3 5 6]);
+    bfsave(A, name, 'dimensionOrder', 'XYCZT', 'Compression', 'LZW')
 
     
 end
