@@ -7,7 +7,16 @@ addpath('plotSpread')
 shift_range = -3:0.05:3;
 
 %%%%% slozka stare se nepouzila
-data_path = 'C:\Users\vicar\Desktop\honza_flourescence\data_27_04_22';
+data_path = '../data_27_04_22';
+
+
+% names = subdir([data_path '/*_norm.tif']);
+% names = {names(:).name};
+% for name = names
+% 
+%     delete(name{1})
+% end
+% 
 
 
 names = subdir([data_path '/*.czi']);
@@ -141,18 +150,18 @@ for img_num = 1:length(names)
 
 
 
-        data_shift = fraccircshift(data,[best_shift,0]);
+        data_shift = fraccircshift(data,[0,best_shift]);
         final = data;
         final(1:2:end,:) = data_shift(1:2:end,:);
 
-        figure(1)
-        plot(quality)
-        figure(2);
-        imshow(data,[0,4000])
-        title('orig')
-        figure(3);
-        imshow(final,[0,4000])
-        title(['shift' num2str(best_shift)])
+%         figure(1)
+%         plot(quality)
+%         figure(2);
+%         imshow(data,[0,4000])
+%         title('orig')
+%         figure(3);
+%         imshow(final,[0,4000])
+%         title(['shift' num2str(best_shift)])
 
 
         save_name_tif = [replace(name,'.czi','') '_' data_names_all{data_num} '_shift' num2str(best_shift) '.tif'];
